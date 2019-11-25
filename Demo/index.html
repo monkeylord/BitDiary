@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport"
+		content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Jodit Test Document</title>
+	<link rel="stylesheet" href="https://unpkg.com/jodit@3.2.62/build/jodit.min.css">
+</head>
+
+<body>
+	<div style="width: 80%;">
+		<p>Demo Instruction:</p>
+		<p>1. click init and wait</p>
+		<p>2. Select diary to read/edit or create a new diary</p>
+		<p>3. Click commit after editing, and pay</p>
+		<p>Plus. Read with public key</p>
+		<p>
+			<button id="init" onclick="initDiary()">Init with PrivKey</button>
+			<a>PrivKey:<input id="privkey" value="L35u5VL8KYJcWTLRuo9RDt1L6VMcLPmdtVE7UBGc8vmEEiFWqrrY"></a>
+			<select id="entrys">
+			</select>
+			<a id="status"></a>
+		</p>
+		<p>
+			<button id="keyView" onclick="readSingleDiary()">View with ViewKey</button>
+			<a>ViewKey:<input id="viewKey"></a>
+		</p>
+		<p>
+			<button id="commit" onclick="onCommit()">Commit</button>
+			<div ref="moneybutton" id='MB'></div>
+		</p>
+	</div>
+	<div id="box" style="width: 80%;">
+		<div id="editor">
+		</div>
+	</div>
+
+	<script src="https://unpkg.com/jodit@3.2.62/build/jodit.min.js"></script>
+	<script src="https://unpkg.com/bsv@1.0.0/bsv.min.js"></script>
+	<script src="https://www.moneybutton.com/moneybutton.js"></script>
+	<script src="../bitdiary.min.js"></script>
+	<script>
+		const editor = new Jodit('#editor', {
+			// iframe: true,
+			// theme: 'dark',
+			toolbarButtonSize: 'large',
+			tabIndex: 0,
+			// textIcons: true,
+		});
+	</script>
+	<script>
+
+		var diary = null
+		var currentIndex = 0
+
+		async function initDiary() {
+			var privkey = document.getElementById("privkey").value
+			diary = new BitDiary(privkey, "BitDiary")
+			document.getElementById("status").text = "Loading"
+			await diary.readDiaries()
+			document.getElementById("entrys")
+			console.log("Done!!!")
+			updateOptions()
+			showDiary(currentIndex)
+			document.getElementById("status").text = "All Loaded"
+		}
+
+		function updateOptions() {
+			var options = document.getElementById("entrys")
+			options.innerHTML = ""
+
+			var length = diary.getDiaries().length
+			for (var i = 0; i < length; i++) {
+				var op = document.createElement("option")
+				op.text = op.value = i
+				options.appendChild(op)
+			}
+			var op = document.createElement("option")
+			op.value = length
+			op.text = "new"
+			options.appendChild(op)
+			options.onchange = onSelectDiary
+		}
+
+		function onSelectDiary() {
+			var index = document.getElementById("entrys").value
+			currentIndex = index
+			showDiary(index)
+		}
+
+		function onCommit(){
+			var editKey = diary.getEditKey(currentIndex)
+			writeDiaryMBDiv(editKey)
+		}
+
+		async function readSingleDiary() {
+			if(!diary)diary = new BitDiary()
+			var viewKey = bsv.PublicKey(document.getElementById("viewKey").value)
+			var content = (await diary.readDiary(viewKey)).pop()
+			var result = BitDiary.getDecryptResult(content.diary, viewKey)
+			editor.value = result
+		}
+
+		function showDiary(index) {
+			var entrys = diary.getDiaries()[index]
+			if (entrys) {
+				var entry = entrys[entrys.length - 1]
+				editor.value = entry.diary
+				document.getElementById("viewKey").value = diary.getEditKey(index).publicKey
+			}else{
+				editor.value = ""
+			}
+		}
+
+
+		var buildPayOutput = function (address, amount) {
+			return new bsv.Transaction.Output({
+				satoshis: amount,
+				script: new bsv.Script.buildPublicKeyHashOut(address)
+			})
+		}
+
+		function toMBOut(output) {
+			return {
+				amount: output.satoshis / 100000000,
+				script: output.script.toASM(),
+				currency: 'BSV'
+			}
+		}
+
+		function writeDiaryMBDiv(editKey) {
+			var MBDiv = document.getElementById("MB")
+			var outs = [
+				diary.getDiaryUpdateOutput(editor.value, editKey),
+				buildPayOutput('1BHcPbcjRZ9ZJvAtr9nd4EQ4HbsUC77WDf', 10000)
+			]
+			var MBouts = outs.map(toMBOut)
+			//var MBDiv = document.createElement('div')
+			moneyButton.render(MBDiv, {
+				label: "提交",
+				clientIdentifier: "8628f951336df6f4254647916d5ef64f",
+				type: "tip",
+				outputs: MBouts,
+				onPayment: console.log,
+				onError: function (arg) { alert(language[pflang].error + arg) }
+			})
+			return MBDiv
+		}
+	</script>
+
+
+</body>
+
+</html>

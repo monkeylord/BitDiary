@@ -1,0 +1,32 @@
+{
+  "name": "bitdiary",
+  "version": "1.0.0",
+  "description": "BitDiary SDK",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack index.js --config webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monkeylord/BitDiary.git"
+  },
+  "keywords": [
+    "bsv",
+    "bitcoin",
+    "bitdiary",
+    "diary",
+    "sdk"
+  ],
+  "author": "Monkeylord",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/monkeylord/BitDiary/issues"
+  },
+  "homepage": "https://github.com/monkeylord/BitDiary#readme",
+  "dependencies": {
+    "bitcoin-ibe": "^1.2.2",
+    "bsv": "^1.0.0",
+    "crypto-js": "^3.1.9-1"
+  }
+}
