@@ -6,7 +6,7 @@
 	<meta name="viewport"
 		content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Jodit Test Document</title>
+	<title>BitDiary Test Demo</title>
 	<link rel="stylesheet" href="https://unpkg.com/jodit@3.2.62/build/jodit.min.css">
 </head>
 
@@ -15,7 +15,7 @@
 		<p>Demo Instruction:</p>
 		<p>1. click init and wait</p>
 		<p>2. Select diary to read/edit or create a new diary</p>
-		<p>3. Click commit after editing, and pay</p>
+		<p>3. Click commit after editing, and pay with moneybutton</p>
 		<p>Plus. Read with public key</p>
 		<p>
 			<button id="init" onclick="initDiary()">Init with PrivKey</button>
@@ -99,6 +99,13 @@
 		async function readSingleDiary() {
 			if(!diary)diary = new BitDiary()
 			var viewKey = bsv.PublicKey(document.getElementById("viewKey").value)
+			var content = (await diary.readDiary(viewKey)).pop()
+			var result = BitDiary.getDecryptResult(content.diary, viewKey)
+			editor.value = result
+		}
+
+		async function readCurrentIndex() {
+			var viewKey = diary.getEditKey(currentIndex).publicKey
 			var content = (await diary.readDiary(viewKey)).pop()
 			var result = BitDiary.getDecryptResult(content.diary, viewKey)
 			editor.value = result
