@@ -115,17 +115,17 @@ BitDiary.prototype.readDiaries = async function (index) {
     var boundary = -1
     var hasLatest = false
     do {
-        var curVKey = BitDiary.editKey(this.privkey, String(keyIndex))
-        if(DEBUG) console.log(keyIndex + ":" + curVKey)
-        var diaryRecord = await this.readDiary(curVKey.publicKey)
+        var curEditKey = BitDiary.editKey(this.privkey, String(keyIndex))
+        if(DEBUG) console.log(keyIndex + ":" + curEditKey)
+        var diaryRecord = await this.readDiary(curEditKey.publicKey)
         if (diaryRecord.length > 0) {
             this.encryptedDiaries[keyIndex] = diaryRecord
             this.diaries[keyIndex] = diaryRecord[0]
-            var plaintext = BitDiary.getDecryptResult(diaryRecord[0].diary, curVKey.publicKey)
+            var plaintext = BitDiary.getDecryptResult(diaryRecord[0].diary, curEditKey.publicKey)
             if(DEBUG) console.log(keyIndex + ":" + plaintext)
         }
 
-        // 指数递进，随后二分确定最新日志及curVKey
+        // 指数递进，随后二分确定最新日志及curEditKey
         // 确保可以在短时间内可以写新日记
         // 随后加载所有日志
         if(DEBUG) console.log(`Searching Index: ${keyIndex} lastKnown: ${lastKnown} boundary: ${boundary}`)
@@ -239,8 +239,8 @@ BitDiary.prototype.readDiary = function (ViewKey) {
     Utilities
 */
 
-BitDiary.AESDecrypt = function (ciphertext, vaultKey) {
-    var keybuf = bsv.crypto.Hash.sha256(vaultKey.toBuffer())
+BitDiary.AESDecrypt = function (ciphertext, key) {
+    var keybuf = bsv.crypto.Hash.sha256(key.toBuffer())
     var key = CryptoJS.enc.Hex.parse(keybuf.slice(0, 8).toString('hex'));
     var iv = CryptoJS.enc.Hex.parse(keybuf.slice(8, 16).toString('hex'));
     var decrypt = CryptoJS.AES.decrypt(ciphertext, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
@@ -248,8 +248,8 @@ BitDiary.AESDecrypt = function (ciphertext, vaultKey) {
     return decryptedStr.toString();
 }
 
-BitDiary.AESEncrypt = function (plaintext, vaultKey) {
-    var keybuf = bsv.crypto.Hash.sha256(vaultKey.toBuffer())
+BitDiary.AESEncrypt = function (plaintext, key) {
+    var keybuf = bsv.crypto.Hash.sha256(key.toBuffer())
     var key = CryptoJS.enc.Hex.parse(keybuf.slice(0, 8).toString('hex'));
     var iv = CryptoJS.enc.Hex.parse(keybuf.slice(8, 16).toString('hex'));
     var srcs = CryptoJS.enc.Utf8.parse(plaintext);
@@ -265,8 +265,8 @@ BitDiary.getDecryptResult = function (ciphertext, key) {
     }
 }
 
-BitDiary.editKey = function (IDKey, vault) {
-    return bsv.PrivateKey(bsv.crypto.Hash.sha256sha256(bsv.PrivateKey(IDKey).childKey(String(vault)).toBuffer()).toString('hex'))
+BitDiary.editKey = function (masterkey, index) {
+    return bsv.PrivateKey(bsv.crypto.Hash.sha256sha256(bsv.PrivateKey(masterkey).childKey(String(index)).toBuffer()).toString('hex'))
 }
 
 BitDiary.getSignature = function (content, privateKey) {
