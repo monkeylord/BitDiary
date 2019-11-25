@@ -18,6 +18,7 @@ var BitDiary = require('bitdiary')
 Browser
 
 ~~~html
+<script src="https://unpkg.com/bsv/bsv.min.js"></script>
 <script src="https://unpkg.com/bitdiary/bitdiary.min.js"></script>
 ~~~
 
